@@ -4,11 +4,11 @@ const bcrypt = require('bcryptjs');
 const router = express.Router();
 // const {} = require('../../controller/authController');
 
-const chapters = require('../../models/chapters');
-const video = require('../../models/video');
-const orderlist = require('../../models/orderlist');
-const topic = require('../../models/topic');
-const Test = require('../../models/Test');
+// const chapters = require('../../models/chapters');
+// const video = require('../../models/video');
+// const orderlist = require('../../models/orderlist');
+// const topic = require('../../models/topic');
+// const Test = require('../../models/Test');
 
 module.exports = (app, db) => {
   const { chapters, video, orderlist, topic, Test } = db;
