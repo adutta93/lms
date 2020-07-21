@@ -1,159 +1,112 @@
-// const User = require('../../models/users');
-// const { check, validationResult } = require('express-validator');
-// var jwt = require('jsonwebtoken');
-// var expressJwt = require('express-jwt');
-// const express = require('express');
-// const router = express.Router();
+const express = require('express');
+// const User = require('../models/userModels');
+const ErrorResponse = require('../../utils/errorResponse');
+const asyncHandler = require('../../middleware/async');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
-// module.exports = (app, db) => {
-//   const { users } = db;
-//   // SIGNUP
-//   app.post(
-//     '/signup',
-//     [
-//       check('firstName')
-//         .isLength({ min: 3 })
-//         .withMessage('Firstname must be at least 3 chars long'),
+// routes
+module.exports = (app, db) => {
+  const { users } = db;
+  // register/signup
+  app.post(
+    '/register',
+    asyncHandler(async (req, res, next) => {
+      const {
+        firstName,
+        lastName,
+        email_Id,
+        mobileNumber,
+        password,
+        role,
+      } = req.body;
 
-//       check('lastName')
-//         .isLength({ min: 2 })
-//         .withMessage('Lasttname must be at least 2 chars long'),
+      // hashing password with bcrypt
+      // users.pre('save', async function (next) {
+      //   const salt = await bcrypt.genSalt(10);
+      //   this.password = await bcrypt.hash(this.password, salt);
+      // });
 
-//       check('email').isEmail().withMessage('Must be a valid email id'),
+      const hashedPassword = await bcrypt.hash(password, 10);
+      console.log('This is the password', hashedPassword);
+      //create user
+      const user = await users.create({
+        firstName,
+        lastName,
+        email_Id,
+        mobileNumber,
+        password: hashedPassword,
+        role,
+      });
 
-//       check('mobileNumber')
-//         .isLength({ min: 10 })
-//         .withMessage('Enter a valid mobile number'),
+      //create token
+      sendTokenResponse(user, 200, res);
 
-//       check('password')
-//         .isLength({ min: 8 })
-//         .withMessage('Must be a atleast 8 character long')
-//         .matches(/\d/)
-//         .withMessage('must contain a number'),
-//     ],
-//     (req, res) => {
-//       const errors = validationResult(req);
+      next();
+    })
+  );
 
-//       if (!errors.isEmpty()) {
-//         return res.status(422).json({
-//           error: errors.array()[0].msg,
-//         });
-//       }
-//       const user = new User(req.body);
-//       user.save((err, user) => {
-//         if (err) {
-//           return res.status(400).json({
-//             err: 'Not being able to save user',
-//           });
-//         }
-//         res.json({
-//           name: user.firstName,
-//           surname: user.lastName,
-//           email: user.email,
-//           number: user.mobileNumber,
-//           id: user._id,
-//           type: user.userType,
-//         });
-//       });
-//     }
-//   );
+  // login/signin
 
-//   // LOGIN/SIGNIN
-//   app.post(
-//     '/login',
-//     [
-//       check('email').isEmail().withMessage('Must be a valid email id'),
+  app.post('/login', async function (req, res, next) {
+    const { email_Id, password } = req.body;
 
-//       check('password')
-//         .isLength({ min: 8 })
-//         .withMessage('Must be a atleast 8 character long')
-//         .matches(/\d/)
-//         .withMessage('must contain a number'),
-//     ],
-//     (req, res) => {
-//       const errors = validationResult(req);
-//       const { email, password } = req.body;
+    //validation email and password
+    if (!email_Id || !password) {
+      return next(new ErrorResponse('Please enter email id and password', 400));
+    }
+    //check for user
 
-//       if (!errors.isEmpty()) {
-//         return res.status(422).json({
-//           error: errors.array()[0].msg,
-//         });
-//       }
+    users.findOne({ email_Id }).then((user) => {
+      if (!user) {
+        return next(new ErrorResponse('Invalid credential', 401));
+      }
+      const isMatch = async () => {
+        //check if password matchs
+        let hashedPassword = await bcrypt.hash(password, 10);
+        const isMatch = bcrypt.compareSync(hashedPassword, user.password);
+        return isMatch;
+      };
 
-//       // to find email and password in DB
-//       users.findOne({ email }, (err, user) => {
-//         if (err || !user) {
-//           return res.status(400).json({
-//             error: 'Email dose not exists',
-//           });
-//         }
+      if (!isMatch) {
+        return next(new ErrorResponse('Invalid password', 401));
+      }
+      //create token
+      sendTokenResponse(user, 200, res);
+    });
+  });
 
-//         if (!user.authenticate(password)) {
-//           return res.status(402).json({
-//             err: 'Email or password do not match',
-//           });
-//         }
+  // to see the logged user
+  app.get(
+    '/getLoggedInUser',
+    asyncHandler(async (req, res, next) => {
+      // user is already available in req due to the protect middleware
+      const user = req.user;
 
-//         // create token
-//         const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
-//         // put token in cookie
-//         res.cookie('token', token, { expire: new Date() + 9999 });
+      res.status(200).json({
+        success: true,
+        data: user,
+      });
+    })
+  );
 
-//         // send response to front end
-//         const { _id, firstName, lastName, email, mobileNumber, role } = user;
-//         return res.json({
-//           token,
-//           user: {
-//             _id,
-//             firstName,
-//             lastName,
-//             email,
-//             mobileNumber,
-//             role,
-//           },
-//         });
-//       });
-//     }
-//   );
+  //get token from model, create a cookie, send res
+  const sendTokenResponse = (user, statusCode, res) => {
+    const token = jwt.sign({ user }, process.env.JWT_SECRET);
+    console.log(token);
+    // persist the token as 't' in cookie with expiry date
+    res.cookie('t', token, { expire: new Date() + 9999 });
 
-//   // SIGNOUT
-//   app.get('/signout', (req, res) => {
-//     res.clearCookie('token');
-//     res.status(200).json({
-//       status: 'Success',
-//       message: 'You signed out successfully',
-//     });
-//   });
-// };
+    if (process.env.NODE_ENV === 'production') {
+      options.secure = true;
+    }
 
-// // router.get('/test', isSignedIn, (req, res) => {
-// //     res.json(req.auth)
-// // });
-
-// // PROTECTED ROUTES
-// // isSignedIn
-// exports.isSignedIn = expressJwt({
-//   secret: process.env.JWT_SECRET,
-//   userProperty: 'auth',
-// });
-
-// // custom middlewares
-// // isAuthenticated
-// exports.isAuthenticated = (req, res, next) => {
-//   let authChecker = req.profile && req.auth && req.profile._id == req.auth._id;
-//   if (!authChecker) {
-//     return res.status(403).json({
-//       error: 'ACCESS DENIED',
-//     });
-//   }
-//   next();
-// };
-// // isAdmin
-// exports.isAdmin = (req, res, next) => {
-//   if (req.profile.role === 0) {
-//     return res.status(403).json({
-//       error: "You're not admin, access denied",
-//     });
-//   }
-//   next();
-// };
+    res
+      .status(statusCode)
+      .cookie('token', token, { expire: new Date() + 9999 })
+      .json({
+        message: 'Succesful',
+        token,
+      });
+  };
+};

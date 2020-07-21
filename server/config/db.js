@@ -89,7 +89,7 @@ sequelize
   });
 //  if change anything in model then please uncomment the below line
 
-//sequelize.sync({force: true}) ;
+// sequelize.sync({ alter: true });
 
 // const db={};
 // db.sequelize = sequelize;

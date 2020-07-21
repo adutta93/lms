@@ -16,6 +16,7 @@ app.use(cookieparser());
 app.use(cors());
 console.log(router);
 
+console.log(process.env.JWT_SECRET);
 // DB Connection
 router.topicrouter(app, db);
 router.chapterrouter(app, db);
@@ -26,7 +27,7 @@ router.questionrouter(app, db);
 router.notesrouter(app, db);
 router.courserouter(app, db);
 router.subjectrouter(app, db);
-// router.authrouter(app, db);
+router.authrouter(app, db);
 
 // server
 const port = process.env.PORT || 8000;

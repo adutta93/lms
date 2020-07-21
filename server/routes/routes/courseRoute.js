@@ -8,9 +8,11 @@ const video = require('../../models/video');
 const orderlist = require('../../models/orderlist');
 const Test = require('../../models/Test');
 
+const { protect, authorize } = require('../../middleware/auth');
+
 module.exports = (app, db) => {
   const { course, video, orderlist, Test } = db;
-  app.get('/course', (req, res) => {
+  app.get('/course', protect, authorize('admin'), (req, res) => {
     console.log('Is called ?');
     course.findAndCountAll().then(function (b) {
       res.json(b);

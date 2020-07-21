@@ -6,9 +6,10 @@ module.exports = (sequelize) => {
   const attributes = {
     //  1 = student ,2= admin ,3= creator,4=uploader,5= accountant
     user_type: {
-      type: DataTypes.INTEGER(11),
+      type: DataTypes.STRING(255),
       allowNull: false,
-      defaultValue: 1,
+      defaultValue: 'student',
+      enum: ['student', 'admin', 'creator', 'uploader', 'accountant'],
       primaryKey: false,
       autoIncrement: false,
       comment: null,
@@ -92,26 +93,5 @@ module.exports = (sequelize) => {
     indexes: [],
   };
   const UsersModel = sequelize.define('users', attributes, options);
-
   return UsersModel;
 };
-
-// PASSWORD HASHING
-// userSchema.methods = {
-//   authenticate: function (mainpassword) {
-//     return this.securePassword(mainpassword) === this.encry_password;
-//   },
-//   securePassword: function (mainpassword) {
-//     if (!mainpassword) {
-//       return '';
-//     }
-//     try {
-//       return crypto
-//         .createHmac('sha256', this.salt)
-//         .update(mainpassword)
-//         .digest('hex');
-//     } catch (error) {
-//       return '';
-//     }
-//   },
-// };
