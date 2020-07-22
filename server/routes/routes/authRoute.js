@@ -6,6 +6,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 // routes
+
 module.exports = (app, db) => {
   const { users } = db;
   // register/signup
@@ -21,14 +22,10 @@ module.exports = (app, db) => {
         role,
       } = req.body;
 
-      // hashing password with bcrypt
-      // users.pre('save', async function (next) {
-      //   const salt = await bcrypt.genSalt(10);
-      //   this.password = await bcrypt.hash(this.password, salt);
-      // });
-
+      // hashing password
       const hashedPassword = await bcrypt.hash(password, 10);
       console.log('This is the password', hashedPassword);
+
       //create user
       const user = await users.create({
         firstName,
@@ -109,4 +106,24 @@ module.exports = (app, db) => {
         token,
       });
   };
+
+  // get a single user
+  app.get('/user', function (req, res) {
+    users
+      .findAll({ where: { email_Id: req.params.email_Id } })
+      .then((s) => {
+        if (!exist) {
+          res.json('no such user exists');
+        }
+        res.status(200).json({
+          username,
+          email_Id,
+          imageId,
+        });
+      })
+      .catch(function (err) {
+        console.log('coming from error');
+        res.json(err);
+      });
+  });
 };

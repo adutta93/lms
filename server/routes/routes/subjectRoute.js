@@ -1,11 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { check, validationResult } = require('express-validator');
-// const {} = require('../controller/authController');
-const subject = require('../../models/subject');
-const video = require('../../models/video');
-const course = require('../../models/couse');
-const Test = require('../../models/Test');
+const { protect, authorize } = require('../../middleware/auth');
 
 module.exports = (app, db) => {
   const { subject, video, course, Test } = db;
@@ -15,7 +10,7 @@ module.exports = (app, db) => {
     });
   });
 
-  app.get('/subjectvideo/:subjectId', (req, res) => {
+  app.get('/subjectvideo/:subjectId', protect, (req, res) => {
     console.log(req.params.subjectName);
     video
       .findAndCountAll({ where: { subjectId: req.params.subjectId } })
@@ -31,7 +26,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/subjectvideolist/:subjectId', (req, res) => {
+  app.get('/subjectvideolist/:subjectId', protect, (req, res) => {
     subject
       .findOne({ where: { subjectId: req.params.subjectId } })
       .then((exist) => {
@@ -51,7 +46,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.post('/subjectvideoupload', (req, res) => {
+  app.post('/subjectvideoupload', authorize('admin'), protect, (req, res) => {
     // console.log(questiond)
     console.log(req.body);
     if (!req.body) {
@@ -93,7 +88,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/subject/:courseId', (req, res) => {
+  app.get('/subject/:courseId', protect, (req, res) => {
     console.log(req.params.courseId);
     subject
       .findAll({ where: { courseCourseId: req.params.courseId } })
@@ -108,7 +103,7 @@ module.exports = (app, db) => {
         res.json(err);
       });
   });
-  app.post('/subjectUpload', (req, res) => {
+  app.post('/subjectUpload', authorize('admin'), protect, (req, res) => {
     course
       .findOne(
         { where: { courseId: req.body.courseId } },
@@ -153,7 +148,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.post('/subjecttestupload', (req, res) => {
+  app.post('/subjecttestupload', authorize('admin'), protect, (req, res) => {
     subject
       .findOne({ where: { subjectId: req.body.subjectId } })
       .then(function (s) {
@@ -188,7 +183,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/subjecttestlist/:subjectId', (req, res) => {
+  app.get('/subjecttestlist/:subjectId', protect, (req, res) => {
     Test.findAndCountAll({ where: { subjectId: req.params.subjectId } }).then(
       function (s) {
         if (!s) {
@@ -199,4 +194,49 @@ module.exports = (app, db) => {
       }
     );
   });
+
+  app.put('/updatesubject/:Id', authorize('admin'), protect, function (
+    req,
+    res
+  ) {
+    subject.findOne({ where: { Id: req.params.Id } }).then((s) => {
+      if (!s) {
+        res.json('no such topic exist');
+      }
+      if (s) {
+        subject
+          .update(
+            { message: 'Successfully updated' },
+            { where: { courseId: req.params.Id } }
+          )
+          .then((s) => {
+            res.status(200);
+          });
+      }
+    });
+  });
+
+  app.delete(
+    '/deletesubject/:subjectId',
+    authorize('admin'),
+    protect,
+    function (req, res) {
+      subject
+        .findOne({ where: { subjectId: req.params.subjectId } })
+        .then((s) => {
+          if (!s) {
+            res.json('no such subject exist');
+          }
+          if (s) {
+            subject
+              .destroy({ where: { subjectId: req.params.subjectId } })
+              .then((s) => {
+                res.status(200).json({
+                  message: 'Successfully deleted',
+                });
+              });
+          }
+        });
+    }
+  );
 };

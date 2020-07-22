@@ -1,6 +1,5 @@
 const express = require('express');
-
-const { check, validationResult } = require('express-validator');
+const { protect, authorize } = require('../../middleware/auth');
 
 module.exports = (app, db) => {
   const { topic, video, subject, orderlist, Test } = db;
@@ -11,7 +10,7 @@ module.exports = (app, db) => {
     });
   });
 
-  app.get('/topicvideo/:topicId', (req, res) => {
+  app.get('/topicvideo/:topicId', protect, (req, res) => {
     console.log(req.params.topicName);
     video
       .findAll({ where: { topicId: req.params.topicId } })
@@ -27,7 +26,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/topicvideolist/:topicId', (req, res) => {
+  app.get('/topicvideolist/:topicId', protect, (req, res) => {
     topic.findOne({ where: { topicId: req.params.topicId } }).then((exist) => {
       console.log(exist);
       if (!exist) {
@@ -45,7 +44,7 @@ module.exports = (app, db) => {
     });
   });
 
-  app.post('/topicupload', (req, res) => {
+  app.post('/topicupload', authorize('admin'), protect, (req, res) => {
     subject
       .findOne({
         where: { subjectId: req.body.subjectId },
@@ -82,7 +81,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/topic/:subjectId', (req, res) => {
+  app.get('/topic/:subjectId', protect, (req, res) => {
     console.log(req.params.subjectName);
     topic
       .findAll({ where: { subjectId: req.params.subjectId } })
@@ -98,7 +97,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.post('/topicvideoupload', (req, res) => {
+  app.post('/topicvideoupload', authorize('admin'), protect, (req, res) => {
     console.log(req.body);
     if (!req.body) {
       return res.send(400);
@@ -135,7 +134,7 @@ module.exports = (app, db) => {
     });
   });
 
-  app.post('/topictestupload', (req, res) => {
+  app.post('/topictestupload', authorize('admin'), protect, (req, res) => {
     const topicName = req.body.topicName;
     topic.findOne({ where: { topicId: req.body.topicId } }).then(function (s) {
       if (!s) {
@@ -168,7 +167,7 @@ module.exports = (app, db) => {
     });
   });
 
-  app.get('/topictestlist/:topicId', (req, res) => {
+  app.get('/topictestlist/:topicId', protect, (req, res) => {
     Test.findAndCountAll({ where: { topicId: req.params.topicId } }).then(
       function (s) {
         if (!s) {
@@ -178,5 +177,41 @@ module.exports = (app, db) => {
         }
       }
     );
+  });
+
+  app.put('/updatetopic/:Id', authorize('admin'), protect, function (req, res) {
+    topic.findOne({ where: { Id: req.params.Id } }).then((s) => {
+      if (!s) {
+        res.json('no such topic exist');
+      }
+      if (s) {
+        topic
+          .update(
+            { message: 'Successfully updated' },
+            { where: { courseId: req.params.Id } }
+          )
+          .then((s) => {
+            res.status(200);
+          });
+      }
+    });
+  });
+
+  app.delete('/deletetopic/:topicId', authorize('admin'), protect, function (
+    req,
+    res
+  ) {
+    topic.findOne({ where: { topicId: req.params.topicId } }).then((s) => {
+      if (!s) {
+        res.json('no such topic exist');
+      }
+      if (s) {
+        topic.destroy({ where: { topicId: req.params.topicId } }).then((s) => {
+          res.status(200).json({
+            message: 'Successfully deleted',
+          });
+        });
+      }
+    });
   });
 };

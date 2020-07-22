@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { check, validationResult } = require('express-validator');
-// const {} = require('../controller/authController');
+const { protect, authorize } = require('../../middleware/auth');
 
 const questions = require('../../models/questions');
 const chapters = require('../../models/chapters');
@@ -9,7 +8,7 @@ const chapters = require('../../models/chapters');
 
 module.exports = (app, db) => {
   const { questions, chapters } = db;
-  app.post('/questionupload', (req, res) => {
+  app.post('/questionupload', authorize('admin'), protect, (req, res) => {
     // console.log(questiond)
     console.log(req.body);
     if (!req.body) {
@@ -37,7 +36,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/question/:chapterName', (req, res) => {
+  app.get('/question/:chapterName', protect, (req, res) => {
     console.log(req.params.chapterName);
     questions
       .findAll({ where: { chapterName: req.params.chapterName } })
@@ -53,7 +52,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/question', (req, res) => {
+  app.get('/question', protect, (req, res) => {
     db.query('select * from questions').then((question) => {
       res.json(question);
     });

@@ -1,12 +1,11 @@
 const notes = require('../../models/notes');
 const express = require('express');
-const router = express.Router();
-const { check, validationResult } = require('express-validator');
-// const {} = require('../controller/authController');
+
+const { protect, authorize } = require('../../middleware/auth');
 
 module.exports = (app, db) => {
   const { notes } = db;
-  app.post('/notesupload', (req, res) => {
+  app.post('/notesupload', authorize('admin'), protect, (req, res) => {
     var courseId = req.body.courseId;
     var subjectId = req.body.subjectId;
     var topicId = req.body.topicId;
@@ -46,7 +45,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/notes/:courseId', (req, res) => {
+  app.get('/notes/:courseId', protect, (req, res) => {
     notes
       .findAll({ where: { courseCourseId: req.params.courseId } })
       .then((s) => {
@@ -61,7 +60,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/notes/:subjectId', (req, res) => {
+  app.get('/notes/:subjectId', protect, (req, res) => {
     notes
       .findAll({ where: { subjectId: req.params.subjectId } })
       .then((s) => {
@@ -76,7 +75,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/notes/:topicId', (req, res) => {
+  app.get('/notes/:topicId', protect, (req, res) => {
     notes
       .findAll({ where: { topicId: req.params.topicId } })
       .then((s) => {
@@ -91,7 +90,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/notes/:chapterId', (req, res) => {
+  app.get('/notes/:chapterId', protect, (req, res) => {
     notes
       .findAll({ where: { chapterChapterId: req.params.chapterChapterId } })
       .then((s) => {

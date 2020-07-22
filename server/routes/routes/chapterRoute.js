@@ -1,15 +1,8 @@
 const express = require('express');
-const expressJwt = require('express-jwt');
-const bcrypt = require('bcryptjs');
+
 const router = express.Router();
-// const {} = require('../../controller/authController');
-
-// const chapters = require('../../models/chapters');
-// const video = require('../../models/video');
-// const orderlist = require('../../models/orderlist');
-// const topic = require('../../models/topic');
-// const Test = require('../../models/Test');
-
+const { protect, authorize } = require('../../middleware/auth');
+// authorize('admin'), protect,
 module.exports = (app, db) => {
   const { chapters, video, orderlist, topic, Test } = db;
   app.get('/chapters', (req, res) => {
@@ -18,7 +11,7 @@ module.exports = (app, db) => {
     });
   });
   //collectionsRoutes(app);
-  app.get('/chaptervideo/:chapterId', (req, res) => {
+  app.get('/chaptervideo/:chapterId', protect, (req, res) => {
     console.log(req.params.chapterName);
     video
       .findAll({ where: { chapterChapterId: req.params.chapterId } })
@@ -34,7 +27,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/chaptervideolist/:chapterId', (req, res) => {
+  app.get('/chaptervideolist/:chapterId', protect, (req, res) => {
     chapters
       .findOne({ where: { chapterId: req.params.chapterId } })
       .then((exist) => {
@@ -56,7 +49,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.post('/chaptervideoupload', (req, res) => {
+  app.post('/chaptervideoupload', authorize('admin'), protect, (req, res) => {
     // console.log(questiond)
     console.log(req.body);
     if (!req.body) {
@@ -98,7 +91,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/chapter/:topicId', (req, res) => {
+  app.get('/chapter/:topicId', protect, (req, res) => {
     console.log(req.params.topicId);
     chapters
       .findAll({ where: { topicId: req.params.topicId } })
@@ -114,7 +107,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.post('/chapterupload', (req, res) => {
+  app.post('/chapterupload', authorize('admin'), protect, (req, res) => {
     topic.findOne({ where: { topicId: req.body.topicId } }).then((exist) => {
       console.log(exist);
 
@@ -150,7 +143,7 @@ module.exports = (app, db) => {
     });
   });
 
-  app.post('/chaptertestupload', (req, res) => {
+  app.post('/chaptertestupload', authorize('admin'), protect, (req, res) => {
     const chapterName = req.body.chapterName;
     chapters
       .findOne({ where: { chapterId: req.body.chapterId } })
@@ -185,7 +178,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/chaptertestlist/:chapterId', (req, res) => {
+  app.get('/chaptertestlist/:chapterId', protect, (req, res) => {
     Test.findAndCountAll({
       where: { chapterChapterId: req.params.chapterId },
     }).then(function (s) {
@@ -196,4 +189,49 @@ module.exports = (app, db) => {
       }
     });
   });
+
+  app.put('/updatechapter/:Id', authorize('admin'), protect, function (
+    req,
+    res
+  ) {
+    chapter.findOne({ where: { Id: req.params.Id } }).then((s) => {
+      if (!s) {
+        res.json('no such topic exist');
+      }
+      if (s) {
+        chapter
+          .update(
+            { message: 'Successfully updated' },
+            { where: { Id: req.params.Id } }
+          )
+          .then((s) => {
+            res.status(200);
+          });
+      }
+    });
+  });
+
+  app.delete(
+    '/deletechapter/:chapterId',
+    authorize('admin'),
+    protect,
+    function (req, res) {
+      chapter
+        .findOne({ where: { chapterId: req.params.chapterId } })
+        .then((s) => {
+          if (!s) {
+            res.json('no such chapter exist');
+          }
+          if (s) {
+            chapter
+              .destroy({ where: { chapterId: req.params.chapterId } })
+              .then((s) => {
+                res.status(200).json({
+                  message: 'Successfully deleted',
+                });
+              });
+          }
+        });
+    }
+  );
 };

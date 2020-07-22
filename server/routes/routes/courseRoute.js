@@ -12,14 +12,14 @@ const { protect, authorize } = require('../../middleware/auth');
 
 module.exports = (app, db) => {
   const { course, video, orderlist, Test } = db;
-  app.get('/course', protect, authorize('admin'), (req, res) => {
+  app.get('/course', (req, res) => {
     console.log('Is called ?');
     course.findAndCountAll().then(function (b) {
       res.json(b);
     });
   });
 
-  app.get('/course/:courseId', (req, res) => {
+  app.get('/course/:courseId', protect, (req, res) => {
     console.log(req.params.courseName);
     video
       .findAndCountAll({ where: { courseCourseId: req.params.courseId } })
@@ -35,7 +35,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/coursevideo/:courseId', function (req, res) {
+  app.get('/coursevideo/:courseId', protect, function (req, res) {
     console.log(req.params.courseName);
     video
       .findAndCountAll({ where: { courseCourseId: req.params.courseId } })
@@ -51,7 +51,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/course/coursevideolist/:courseId', (req, res) => {
+  app.get('/course/coursevideolist/:courseId', protect, (req, res) => {
     course
       .findOne({ where: { courseId: req.params.courseId } })
       .then((exist) => {
@@ -71,7 +71,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/coursetestlist/:courseId', (req, res) => {
+  app.get('/coursetestlist/:courseId', protect, (req, res) => {
     Test.findAndCountAll({
       where: { courseCourseId: req.params.courseId },
     }).then(function (s) {
@@ -83,7 +83,7 @@ module.exports = (app, db) => {
     });
   });
 
-  app.post('/courseUpload', (req, res) => {
+  app.post('/courseUpload', authorize('admin'), protect, (req, res) => {
     // const course     = req.body.courseId;
     const courseName = req.body.courseName;
     const courseDesc = req.body.courseDesc;
@@ -105,7 +105,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/courselist/:courseId', (req, res) => {
+  app.get('/courselist/:courseId', protect, (req, res) => {
     course
       .findAndCountAll({
         where: { courseId: req.params.courseId },
@@ -133,7 +133,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.post('/coursetestupload', (req, res) => {
+  app.post('/coursetestupload', authorize('admin'), protect, (req, res) => {
     course
       .findOne({ where: { courseId: req.body.courseId } })
       .then(function (s) {
@@ -168,7 +168,10 @@ module.exports = (app, db) => {
       });
   });
 
-  app.post('/coursevideoupload', function (req, res) {
+  app.post('/coursevideoupload', authorize('admin'), protect, function (
+    req,
+    res
+  ) {
     // console.log(questiond)
     console.log(req.body);
     if (!req.body) {
@@ -202,6 +205,47 @@ module.exports = (app, db) => {
               });
             res.status(200).json({
               message: 'video updated for course' + req.body.courseId,
+            });
+          });
+      }
+    });
+  });
+
+  app.put('/updatecourse/:Id', authorize('admin'), protect, function (
+    req,
+    res
+  ) {
+    course.findOne({ where: { Id: req.params.Id } }).then((s) => {
+      if (!s) {
+        res.json('no such topic exist');
+      }
+      if (s) {
+        course
+          .update(
+            { message: 'Successfully updated' },
+            { where: { courseId: req.params.Id } }
+          )
+          .then((s) => {
+            res.status(200);
+          });
+      }
+    });
+  });
+
+  app.delete('/deletecourse/:courseId', authorize('admin'), protect, function (
+    req,
+    res
+  ) {
+    course.findOne({ where: { courseId: req.params.courseId } }).then((s) => {
+      if (!s) {
+        res.json('no such course exist');
+      }
+      if (s) {
+        course
+          .destroy({ where: { courseId: req.params.courseId } })
+          .then((s) => {
+            res.status(200).json({
+              message: 'Successfully deleted',
             });
           });
       }

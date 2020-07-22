@@ -1,15 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { check, validationResult } = require('express-validator');
-// const {} = require('../controller/authController');
-const course = require('../../models/course');
-const subject = require('../../models/subject');
-const topic = require('../../models/topic');
-const chapters = require('../../models/chapters');
+
+const { protect, authorize } = require('../../middleware/auth');
 
 module.exports = (app, db) => {
   const { subject, course, topic, chapters } = db;
-  app.get('/testo', (req, res) => {
+  app.get('/testo', protect, (req, res) => {
     course
       .findAll({
         include: [

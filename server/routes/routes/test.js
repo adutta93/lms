@@ -2,20 +2,12 @@ const express = require('express');
 
 // const models = require( '../../models/index');
 // const db = require('../../config/db');
-const subject = require('../../models/subject');
-const question = require('../../models/questions');
-const topic = require('../../models/topic');
-const chapter = require('../../models/chapters');
-const jwt = require('jsonwebtoken'); // to generate signed token
-const expressJwt = require('express-jwt');
-const bcrypt = require('bcryptjs');
-const router = express.Router();
-// const { signup, signout, requireSignin, hello } = require("../../controller/user");
-// router.post("/signup", signup);
+
+const { protect, authorize } = require('../../middleware/auth');
 
 module.exports = (app, db) => {
   const { subject, question, topic, chapter } = db;
-  app.get('/courselist', function (req, res) {
+  app.get('/courselist', protect, function (req, res) {
     console.log(db.subject);
     console.log(subject);
     model.Course.findAll({

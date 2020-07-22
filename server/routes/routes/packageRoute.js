@@ -1,16 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { check, validationResult } = require('express-validator');
-// const {} = require('../controller/authController');
-const course = require('../../models/course');
-const packages = require('../../models/coursepackage');
-const subject = require('../../models/subject');
-const orderlist = require('../../models/orderlist');
-const video = require('../../models/video');
+('express-validator');
+const { protect, authorize } = require('../../middleware/auth');
 
 module.exports = (app, db) => {
   const { course, packages, subject, orderlist, video } = db;
-  app.post('/createpackage', (req, res) => {
+  app.post('/createpackage', protect, (req, res) => {
     var courseId = req.body.courseId;
     var subjectId = req.body.subjectId;
     var topicId = req.body.topicId;
@@ -104,7 +99,7 @@ module.exports = (app, db) => {
     }
   });
 
-  app.get('/getallpackages', (req, res) => {
+  app.get('/getallpackages', protect, (req, res) => {
     const { packages } = db;
     packages.findAll().then((e) => {
       if (!e) {
@@ -115,7 +110,7 @@ module.exports = (app, db) => {
     });
   });
 
-  app.post('/packageorder', (req, res) => {
+  app.post('/packageorder', protect, (req, res) => {
     var courseId = req.body.courseId;
     var subjectId = req.body.subjectId;
     var topicId = req.body.topicId;
@@ -167,7 +162,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/packageorder/:courseId', (req, res) => {
+  app.get('/packageorder/:courseId', protect, (req, res) => {
     orderlist
       .findAll({ where: { courseCourseId: req.params.courseId } })
       .then((s) => {
@@ -175,7 +170,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/packageorder/:subjectId', (req, res) => {
+  app.get('/packageorder/:subjectId', protect, (req, res) => {
     orderlist
       .findAll({ where: { subjectId: req.params.subjectId } })
       .then((s) => {
@@ -183,13 +178,13 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/packageorder/:topicId', (req, res) => {
+  app.get('/packageorder/:topicId', protect, (req, res) => {
     orderlist.findAll({ where: { topicId: req.params.topicId } }).then((s) => {
       res.send(s);
     });
   });
 
-  app.get('/packageorder/:chapterId', (req, res) => {
+  app.get('/packageorder/:chapterId', protect, (req, res) => {
     orderlist
       .findAll({ where: { chapterChapterId: req.params.chapterId } })
       .then((s) => {
@@ -197,7 +192,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.get('/pacakge/:packageId', (req, res) => {
+  app.get('/pacakge/:packageId', protect, (req, res) => {
     packages
       .findAll({
         where: { packageId: req.params.packageId },
@@ -213,7 +208,7 @@ module.exports = (app, db) => {
       });
   });
 
-  app.post('/addcoursetopackage', (req, res) => {
+  app.post('/addcoursetopackage', protect, (req, res) => {
     var s;
     video
       .findAndCountAll({ where: { courseCourseId: req.body.courseId } })
@@ -226,4 +221,49 @@ module.exports = (app, db) => {
         for (let i = 0; i < s; i++) {}
       });
   });
+
+  app.put('/updatepackage/:Id', authorize('admin'), protect, function (
+    req,
+    res
+  ) {
+    packages.findOne({ where: { Id: req.params.Id } }).then((s) => {
+      if (!s) {
+        res.json('no such package exist');
+      }
+      if (s) {
+        packages
+          .update(
+            { message: 'Successfully updated' },
+            { where: { courseId: req.params.Id } }
+          )
+          .then((s) => {
+            res.status(200);
+          });
+      }
+    });
+  });
+
+  app.delete(
+    '/deletepackage/:packageId',
+    authorize('admin'),
+    protect,
+    function (req, res) {
+      packages
+        .findOne({ where: { packageId: req.params.packageId } })
+        .then((s) => {
+          if (!s) {
+            res.json('no such package exist');
+          }
+          if (s) {
+            packages
+              .destroy({ where: { packageId: req.params.packageId } })
+              .then((s) => {
+                res.status(200).json({
+                  message: 'Successfully deleted',
+                });
+              });
+          }
+        });
+    }
+  );
 };

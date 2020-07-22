@@ -1,9 +1,6 @@
-const {
-  DataTypes
-} = require('sequelize');
+const { DataTypes } = require('sequelize');
 
-
-module.exports = sequelize => {
+module.exports = (sequelize) => {
   const attributes = {
     videoId: {
       type: DataTypes.UUID,
@@ -12,23 +9,44 @@ module.exports = sequelize => {
       primaryKey: true,
       autoIncrement: false,
       comment: null,
-      field: "videoId"
+      field: 'videoId',
     },
     videoPath: {
       type: DataTypes.STRING(255),
       allowNull: true,
       defaultValue: null,
       primaryKey: false,
-      unique:true,
+      unique: true,
       autoIncrement: false,
       comment: null,
-      field: "videoPath"
+      field: 'videoPath',
+    },
+
+    videoname: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      defaultValue: null,
+      primaryKey: false,
+      unique: true,
+      autoIncrement: false,
+      comment: null,
+      field: 'videoname',
+    },
+    videodescription: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      defaultValue: null,
+      primaryKey: false,
+      unique: true,
+      autoIncrement: false,
+      comment: null,
+      field: 'videodescription',
     },
     // orderlist:{
     //    type:DataTypes.INTEGER(11),
     //    autoIncrement:true
     // },
-  
+
     created_at: {
       type: DataTypes.DATE,
       allowNull: true,
@@ -36,7 +54,7 @@ module.exports = sequelize => {
       primaryKey: false,
       autoIncrement: false,
       comment: null,
-      field: "created_at"
+      field: 'created_at',
     },
     updated_at: {
       type: DataTypes.DATE,
@@ -45,14 +63,14 @@ module.exports = sequelize => {
       primaryKey: false,
       autoIncrement: false,
       comment: null,
-      field: "updated_at"
-    }
+      field: 'updated_at',
+    },
   };
   const options = {
-    tableName: "video",
-    comment: "",
-    indexes: []
+    tableName: 'video',
+    comment: '',
+    indexes: [],
   };
-  const VideoModel = sequelize.define("video", attributes, options);
+  const VideoModel = sequelize.define('video', attributes, options);
   return VideoModel;
 };
